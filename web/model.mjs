@@ -1,7 +1,10 @@
-// Keep transformations separate from the DOM so they can be tested directly.
-export function cleanLines(text) {
-  if (typeof text !== 'string') throw new TypeError('Expected text');
-  const lines = text.split(/\r\n|\r|\n/).map(line => line.trim()).filter(Boolean);
-  const unique = [...new Set(lines)];
-  return { text: unique.join('\n'), count: unique.length, removed: lines.length - unique.length };
-}
+export function number(value){if(value===null||value===undefined||value==='')return null;const n=Number(value);return Number.isFinite(n)?n:null;}
+export function coordinates(record){const lat=number(record.lat),lon=number(record.lon);if(lat===null||lon===null||!['N','S'].includes(record['lat-dir'])||!['E','W'].includes(record['lon-dir'])||lat<0||lat>90||lon<0||lon>180)return null;return {lat:lat*(record['lat-dir']==='S'?-1:1),lon:lon*(record['lon-dir']==='W'?-1:1)};}
+export function filterRecords(records,f={}){return records.filter(r=>{const date=r.date.slice(0,10),pos=coordinates(r);if(f.search&&!r.date.includes(f.search.trim()))return false;if(f.from&&date<f.from||f.to&&date>f.to)return false;if(number(r['impact-e'])<(number(f.minEnergy)??0))return false;if(f.location==='known'&&!pos||f.location==='missing'&&pos)return false;if(f.region==='north'&&(!pos||pos.lat<0)||f.region==='south'&&(!pos||pos.lat>=0))return false;if(f.region==='north-america'&&(!pos||pos.lat<5||pos.lat>85||pos.lon<-170||pos.lon>-50))return false;return true;});}
+export function sortRecords(records,order){return [...records].sort((a,b)=>order==='energy'?number(b['impact-e'])-number(a['impact-e'])||b.date.localeCompare(a.date):order==='oldest'?a.date.localeCompare(b.date):b.date.localeCompare(a.date));}
+export function yearCounts(records){const years=new Map();for(const r of records){const y=r.date.slice(0,4);years.set(y,(years.get(y)||0)+1);}return [...years].sort(([a],[b])=>a.localeCompare(b));}
+export function csv(records){const fields=['date','lat','lat-dir','lon','lon-dir','alt','energy','impact-e','vx','vy','vz'];const escape=v=>'"'+String(v??'').replaceAll('"','""')+'"';return fields.join(',')+'\r\n'+records.map(r=>fields.map(f=>escape(r[f])).join(',')).join('\r\n');}
+export function validateCapture(data){if(data?.schema!=='coolcode.fireball.capture.v1'||!Array.isArray(data.records)||!data.records.length||!/^\d{4}-\d{2}-\d{2}T/.test(data.capturedAt)||data.records.some(r=>typeof r.date!=='string'||!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(r.date)||!(number(r['impact-e'])>0)||!(number(r.energy)>0)))throw Error('Unrecognized or incomplete capture');return data;}
+export const project=({lat,lon})=>({x:(lon+180)*1000/360,y:(90-lat)*500/180+5});
+export const energyColor=value=>value>=10?'#f56e52':value>=1?'#fa9f67':'#e2c887';
+export const energyRadius=value=>Math.max(2.6,Math.min(15,3+Math.log10(Math.max(.01,value)*100)*2.2));

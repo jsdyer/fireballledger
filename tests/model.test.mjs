@@ -1,21 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cleanLines } from '../web/model.mjs';
-test('trims, removes blanks and preserves first-seen order', () => {
-  assert.deepEqual(cleanLines('  Halifax\nLangley\nHalifax\n\nVancouver  '), {
-    text: 'Halifax\nLangley\nVancouver', count: 3, removed: 1,
-  });
-});
-test('supports Windows and old Mac line endings', () => {
-  assert.equal(cleanLines('a\r\nb\ra').text, 'a\nb');
-});
-test('empty text and whitespace produce an empty result', () => {
-  assert.deepEqual(cleanLines(' \n\t'), { text: '', count: 0, removed: 0 });
-});
-test('preserves case and Unicode', () => {
-  assert.equal(cleanLines('Québec\nquébec\n東京\nQuébec').text, 'Québec\nquébec\n東京');
-});
-test('treats markup as ordinary text', () => {
-  assert.equal(cleanLines('<script>alert(1)</script>\n<script>alert(1)</script>').text, '<script>alert(1)</script>');
-});
-test('rejects non-text input', () => { assert.throws(() => cleanLines(null), TypeError); });
+import {coordinates,filterRecords,sortRecords,yearCounts,csv,validateCapture,project} from '../web/model.mjs';
+import {readFileSync} from 'node:fs';
+const a={date:'2020-01-01 00:00:00',lat:'0','lat-dir':'N',lon:'0','lon-dir':'E',energy:'2','impact-e':'.4',alt:null};
+const b={...a,date:'2021-05-01 12:00:00',lat:null,lon:null,'lat-dir':null,'lon-dir':null,'impact-e':'2'};
+const c={...a,date:'2020-10-03 12:00:00',lat:'49','lat-dir':'N',lon:'123','lon-dir':'W','impact-e':'1'};
+test('missing coordinates remain missing; zero coordinates are valid',()=>{assert.equal(coordinates(b),null);assert.deepEqual(coordinates(a),{lat:0,lon:0});assert.deepEqual(project(coordinates(a)),{x:500,y:255});});
+test('hemisphere and regional filters do not classify missing coordinates',()=>{assert.deepEqual(filterRecords([a,b,c],{region:'north-america'}),[c]);assert.deepEqual(filterRecords([a,b,c],{location:'missing'}),[b]);assert.equal(filterRecords([a,b,c],{region:'north'}).length,2);});
+test('dates and energy combine and user thresholds are unrestricted',()=>{assert.deepEqual(filterRecords([a,b,c],{from:'2020-01-01',to:'2020-12-31',minEnergy:.5}),[c]);});
+test('sort and yearly aggregate do not mutate captured records',()=>{const data=[a,b,c];assert.equal(sortRecords(data,'energy')[0],b);assert.equal(data[0],a);assert.deepEqual(yearCounts(data),[['2020',2],['2021',1]]);});
+test('CSV retains absent fields and source energy units',()=>{const output=csv([b]);assert.match(output,/impact-e/);assert.match(output,/"2021-05-01 12:00:00","","","","","","2","2"/);});
+test('config can grow beyond starter presets without model changes',()=>{const cfg=JSON.parse(readFileSync(new URL('../web/config.json',import.meta.url)));cfg.presets.push({label:'Southern sky 0.5 kt+',minEnergy:.5,region:'south'});assert.equal(cfg.presets.length,5);assert.equal(filterRecords([{...c,'lat-dir':'S'}],cfg.presets.at(-1)).length,1);});
+test('a malformed capture cannot replace the current viewer state',()=>{assert.throws(()=>validateCapture({schema:'coolcode.fireball.capture.v1',capturedAt:'now',records:[a]}));});

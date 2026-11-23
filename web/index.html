@@ -1,34 +1,16 @@
 <!doctype html>
-<html lang="en-CA">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="{{DESCRIPTION}}">
-  <title>{{TITLE}} · CoolCode</title>
-  <link rel="stylesheet" href="./style.css">
-  <script type="module" src="./app.mjs"></script>
-  {{VISIT_COUNTER}}
-</head>
-<body data-tool-id="{{TOOL_ID}}">
-  <a class="skip" href="#main">Skip to content</a>
-  <header><a href="https://coolcode.ca/">← CoolCode.ca</a><a href="{{SOURCE_URL}}">Source &amp; instructions ↗</a></header>
-  <main id="main">
-    <p class="eyebrow">Browser tool starter</p>
-    <h1>{{TITLE}}</h1>
-    <p class="intro">{{DESCRIPTION}}</p>
-    <section aria-labelledby="example-title">
-      <h2 id="example-title">Clean a list</h2>
-      <p>Trim spaces, skip blank lines and remove exact duplicates. Capitalization stays distinct.</p>
-      <div class="panels">
-        <div><label for="input">Your lines</label><textarea id="input" rows="10" maxlength="100000" spellcheck="false" placeholder="Paste one item per line"></textarea></div>
-        <div><label for="output">Cleaned lines</label><textarea id="output" rows="10" readonly spellcheck="false"></textarea></div>
-      </div>
-      <div class="actions"><button id="sample" type="button">Load example</button><button id="clear" type="button">Clear</button><button id="copy" type="button" hidden>Copy result</button></div>
-      <p id="status" role="status" aria-live="polite">Paste a list to begin.</p>
-      <noscript><p>This tool needs JavaScript to process your text. The source is available above.</p></noscript>
-    </section>
-    <aside aria-label="Privacy"><strong>Stays on your device.</strong> The browser processes your text in this tab. Reloading clears it.</aside>
-  </main>
-  <footer>Part of <a href="https://coolcode.ca/">the CoolCode collection</a>. {{ISSUE_LINK}}</footer>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="{{DESCRIPTION}}"><title>{{TITLE}} · CoolCode</title><link rel="canonical" href="https://coolcode.ca/{{TOOL_ID}}/"><link rel="stylesheet" href="./style.css">{{VISIT_COUNTER}}<script type="module" src="./app.mjs"></script></head>
+<body><a class="skip" href="#explore">Skip to explorer</a><header class="top"><a href="https://coolcode.ca/">CoolCode<span> / FIELD OBSERVATIONS</span></a><nav><a href="#method">Sources & method</a><a href="{{SOURCE_URL}}">Source code</a></nav></header>
+<main><section class="hero"><div><p class="eyebrow">CNEOS / REPORTED FIREBALL EVENTS</p><h1>Brief light.<br><em>Lasting record.</em></h1><p class="intro">A ledger of fireballs detected by U.S. Government sensors. Explore where they were reported, compare their energies, and follow revisions to the catalogue.</p></div><div class="hero-art" aria-hidden="true"><div class="orbit one"></div><div class="orbit two"></div><div class="meteor"></div><div class="art-label">FIREBALL<br><strong>LEDGER</strong></div></div></section>
+<section class="capture-bar" aria-label="Capture details"><div><label for="capture">Dated capture</label><select id="capture" disabled><option>Loading captures…</option></select></div><p id="coverage">Reading the retained catalogue.</p><a href="https://cneos.jpl.nasa.gov/fireballs/">Official CNEOS catalogue</a></section>
+<p id="status" role="status" aria-live="polite">Loading the published data…</p>
+<section id="explore" class="explorer"><div class="section-head"><div><p class="eyebrow">THE OBSERVED CATALOGUE</p><h2>Across a restless sky.</h2></div><div class="downloads"><button id="csv" disabled>Export filtered CSV</button><button id="json" disabled>Save capture JSON</button></div></div>
+<div class="filters"><label>Find an event date<input id="search" type="search" placeholder="2013-02-15 or 2026"></label><label>From date<input id="from" type="date"></label><label>Through date<input id="to" type="date"></label><label>Minimum impact energy · kt<input id="energy" type="number" min="0" step="any" value="0"></label><label>Coordinates<select id="location"><option value="all">All events</option><option value="known">Location reported</option><option value="missing">Location not reported</option></select></label><label>Region<select id="region"><option value="all">Worldwide</option><option value="north">Northern hemisphere</option><option value="south">Southern hemisphere</option><option value="north-america">North America window</option></select></label></div><div class="preset-row"><span>Start with</span><div id="presets"></div><button id="reset" class="text-button">Reset filters</button></div>
+<div class="stats"><div><strong id="count">—</strong><span>matching reported events</span></div><div><strong id="mapped">—</strong><span>with coordinates to map</span></div><div><strong id="largest">—</strong><span>largest impact energy · kt</span></div><div><strong id="missing">—</strong><span>without reported location</span></div></div>
+<div class="map-layout"><section class="map-card"><div class="panel-head"><h3>At peak brightness</h3><span>Click a point to inspect</span></div><div class="map-wrap"><svg id="map" viewBox="0 0 1000 510" role="img" aria-label="World map of the filtered fireball events; equivalent details appear in the event table"><g id="grid"></g><g id="land"></g><g id="points"></g></svg></div><div class="legend"><span><i class="dot small"></i>Under 1 kt</span><span><i class="dot medium"></i>1–10 kt</span><span><i class="dot large"></i>10 kt or more</span></div><p class="map-note">Position is the reported peak-brightness location. Missing coordinates are excluded from the map, not from the ledger. North America is a geographic window, not a country classification.</p></section><aside class="detail" id="detail" aria-live="polite"><p class="eyebrow">EVENT RECEIPT</p><h3 id="event-title">Select an event</h3><p id="event-location">Use a map point or the table below.</p><div id="event-data"></div><details id="raw"><summary>Original source fields</summary><pre id="event-raw"></pre></details><p class="detail-note">Reported values are approximate. “Impact energy” is calculated from radiated energy; it is not a measurement of damage on the ground.</p></aside></div>
+<section class="timeline-panel"><div class="panel-head"><h3>Reports by event year</h3><span>Click a bar to select a year</span></div><div id="timeline" class="timeline"></div><p>Counts reflect this published sensor catalogue and your filters. They do not measure the true worldwide frequency of fireballs.</p></section>
+<section class="table-panel"><div class="panel-head"><h3>The event ledger</h3><label class="sort-label">Sort<select id="sort"><option value="newest">Newest event first</option><option value="oldest">Oldest event first</option><option value="energy">Highest impact energy</option></select></label></div><div class="table-scroll"><table><thead><tr><th>Peak brightness · UTC</th><th>Reported position</th><th>Impact energy</th><th>Radiated energy</th><th>Altitude</th></tr></thead><tbody id="rows"></tbody></table></div><p id="empty" hidden>No events match these filters. Adjust the dates, energy or coordinates filter.</p><div class="pagination"><button id="previous">Previous</button><span id="page-info"></span><button id="next">Next</button></div></section>
+<section class="changes"><div class="section-head"><div><p class="eyebrow">THE CATALOGUE CAN CHANGE</p><h2>What did the source revise?</h2></div><span id="comparison-date"></span></div><p id="changes-summary"></p><div id="changes-list"></div><p class="note">CNEOS supplies no immutable event ID. Matches use the reported event time. A corrected time can appear as an added and an absent record; those labels do not prove a newly occurring or deleted event. Comparisons are made only between captures with identical collection settings.</p></section></section>
+<section class="method" id="method"><h2>Keep the light in context.</h2><div class="method-grid"><article><h3>A report, not a census</h3><p>These are observations released to CNEOS from U.S. Government sensors. Not every fireball is reported, updates are not real time, and CNEOS does not independently verify or reanalyse each event. A blank field means the value was not supplied.</p><a href="https://cneos.jpl.nasa.gov/fireballs/">CNEOS data and operational context</a></article><article><h3>Dates & revisions</h3><p>Event times describe peak brightness in UTC. The capture date says when this tool retrieved the catalogue. Weekly captures retain published values and comparisons, with the newest 52 captures kept by default. The first capture is a baseline; it cannot reveal older edits.</p><a href="https://ssd-api.jpl.nasa.gov/doc/fireball.html">Field definitions and units</a></article><article><h3>Your browser, your filters</h3><p>Filtering and exports run locally. This page reads saved data from CoolCode and does not query the JPL API. A scheduled GitHub job makes one cached, identified request. No account or API key is required. The basemap is public-domain Natural Earth data.</p><a href="https://ssd-api.jpl.nasa.gov/doc/">JPL API fair-use policy</a> · <a href="https://www.naturalearthdata.com/about/terms-of-use/">Map attribution</a></article></div></section>
+<nav class="related" aria-label="Related tools"><span>Keep exploring</span><a href="https://coolcode.ca/launchledger/">Launch Ledger</a><a href="https://coolcode.ca/orbitalcensus/">Orbital Census</a><a href="https://coolcode.ca/platesolvelab/">Plate Solve Lab</a></nav>
+</main><footer><a href="https://coolcode.ca/">CoolCode.ca</a><span>Independent tool · Data: NASA/JPL CNEOS · No NASA endorsement</span>{{ISSUE_LINK}}</footer></body></html>

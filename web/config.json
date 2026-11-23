@@ -1,0 +1,16 @@
+{
+  "apiParameters": {"vel-comp": "true"},
+  "acceptedApiVersions": ["1.2"],
+  "retainCaptures": 52,
+  "minimumRecords": 1,
+  "maximumRecords": 10000,
+  "maximumDropFraction": 0.25,
+  "userAgent": "CoolCode-FireballLedger/1.0 (+https://github.com/jsdyer/fireballledger; contact: jeffdyer@gmail.com)",
+  "presets": [
+    {"label": "All reported events", "minEnergy": 0},
+    {"label": "At least 1 kt", "minEnergy": 1},
+    {"label": "Northern hemisphere", "minEnergy": 0, "region": "north"},
+    {"label": "Missing coordinates", "minEnergy": 0, "location": "missing"}
+  ],
+  "pageSize": 30
+}

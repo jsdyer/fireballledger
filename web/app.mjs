@@ -1,37 +1,24 @@
-import { cleanLines } from './model.mjs';
-const input = document.querySelector('#input');
-const output = document.querySelector('#output');
-const status = document.querySelector('#status');
-const copy = document.querySelector('#copy');
-function update() {
-  const result = cleanLines(input.value);
-  output.value = result.text;
-  status.textContent = `${result.count} unique ${result.count === 1 ? 'line' : 'lines'}; ${result.removed} ${result.removed === 1 ? 'duplicate' : 'duplicates'} removed.`;
-  copy.disabled = result.count === 0;
-}
-input.addEventListener('input', update);
-document.querySelector('#sample').addEventListener('click', () => {
-  input.value = '  Halifax\nLangley\nHalifax\n\nVancouver  ';
-  update();
-});
-document.querySelector('#clear').addEventListener('click', () => {
-  input.value = '';
-  update();
-  input.focus();
-});
-if (navigator.clipboard && window.isSecureContext) {
-  copy.hidden = false;
-  copy.disabled = true;
-  copy.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(output.value);
-      status.textContent = 'Result copied.';
-    } catch {
-      output.focus();
-      output.select();
-      status.textContent = 'Copy was unavailable. The result is selected so you can copy it manually.';
-    }
-  });
-}
-// Namespace future preference storage as coolcode:<tool-id>:<key>.
-// Do not persist pasted text or uploads by default.
+import {coordinates,filterRecords,sortRecords,yearCounts,csv,validateCapture,project,energyColor,energyRadius,number} from './model.mjs';
+const $=id=>document.getElementById(id),svgNS='http://www.w3.org/2000/svg';
+let config,index,current,filtered=[],page=0,selected=null,loadSequence=0;
+const fmt=n=>n===null||n===undefined?'Not reported':new Intl.NumberFormat('en-CA',{maximumFractionDigits:4}).format(n);
+const timestamp=t=>new Date(t).toLocaleString('en-CA',{timeZone:'UTC',year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' UTC';
+function el(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
+function svg(tag,attrs){const n=document.createElementNS(svgNS,tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,String(v));return n;}
+async function json(url){const r=await fetch(url,{cache:'no-cache'});if(!r.ok)throw Error('Published data returned HTTP '+r.status);return r.json();}
+function state(){return {search:$('search').value,from:$('from').value,to:$('to').value,minEnergy:$('energy').value,location:$('location').value,region:$('region').value};}
+function position(r){const p=coordinates(r);return p?`${fmt(Math.abs(p.lat))}° ${p.lat<0?'S':'N'}, ${fmt(Math.abs(p.lon))}° ${p.lon<0?'W':'E'}`:'Location not reported';}
+function choose(record){selected=record.date;$('event-title').textContent=record.date+' UTC';$('event-location').textContent=position(record);const dl=el('dl');for(const [label,value] of [['Calculated impact energy',fmt(number(record['impact-e']))+' kt'],['Total radiated energy',fmt(number(record.energy))+' × 10¹⁰ J'],['Altitude above geoid',record.alt===null?'Not reported':fmt(number(record.alt))+' km']]){const div=el('div',undefined,'event-metric');div.append(el('dt',label),el('dd',value));dl.append(div);}$('event-data').replaceChildren(dl);$('event-raw').textContent=JSON.stringify(record,null,2);for(const point of $('points').children)point.classList.toggle('selected',point.dataset.date===selected);for(const row of $('rows').children)row.classList.toggle('selected',row.dataset.date===selected);}
+function clearDetail() {selected=null;$('event-title').textContent='No matching event';$('event-location').textContent='Adjust filters to inspect a record.';$('event-data').replaceChildren();$('event-raw').textContent='';}
+function map(records){$('points').replaceChildren();for(const r of [...records].sort((a,b)=>number(b['impact-e'])-number(a['impact-e']))){const p=coordinates(r);if(!p)continue;const {x,y}=project(p),value=number(r['impact-e']);const circle=svg('circle',{cx:x,cy:y,r:energyRadius(value),fill:energyColor(value)});circle.dataset.date=r.date;circle.append(svg('title',{}));circle.firstChild.textContent=r.date+' UTC · '+fmt(value)+' kt · '+position(r);circle.addEventListener('click',()=>choose(r));$('points').append(circle);}}
+function timeline(records){const counts=yearCounts(records);$('timeline').replaceChildren();if(!counts.length){$('timeline').append(el('p','No events in the selected period.'));return;}const max=Math.max(...counts.map(([,n])=>n));counts.forEach(([year,count],i)=>{const b=el('button',undefined,'year-bar');b.title=`${year}: ${count} reported events`;b.setAttribute('aria-label',b.title+'; filter to this year');const bar=el('span');bar.style.height=Math.max(2,count/max*100)+'%';b.append(bar);if(i%5===0||i===counts.length-1)b.append(el('small',year));b.addEventListener('click',()=>{$('from').value=year+'-01-01';$('to').value=year+'-12-31';render();});$('timeline').append(b);});}
+function rows(){const size=Math.max(5,Math.min(100,config.pageSize||30)),pages=Math.max(1,Math.ceil(filtered.length/size));page=Math.min(page,pages-1);$('rows').replaceChildren();for(const r of filtered.slice(page*size,(page+1)*size)){const row=el('tr');row.dataset.date=r.date;const td=el('td'),b=el('button',r.date);b.setAttribute('aria-label','Inspect event '+r.date+' UTC');b.addEventListener('click',()=>choose(r));td.append(b);row.append(td,el('td',position(r)),el('td',fmt(number(r['impact-e']))+' kt'),el('td',fmt(number(r.energy))+' × 10¹⁰ J'),el('td',r.alt===null?'Not reported':fmt(number(r.alt))+' km'));row.classList.toggle('selected',r.date===selected);$('rows').append(row);}$('page-info').textContent=`Page ${page+1} of ${pages} · ${filtered.length.toLocaleString()} events`;$('previous').disabled=page===0;$('next').disabled=page+1>=pages;$('empty').hidden=filtered.length>0;}
+function render(){if(!current)return;if($('from').value&&$('to').value&&$('from').value>$('to').value){$('status').textContent='The from date must not be after the through date. Previous results are unchanged.';return;}filtered=sortRecords(filterRecords(current.records,state()),$('sort').value);page=0;const located=filtered.filter(r=>coordinates(r));$('count').textContent=filtered.length.toLocaleString();$('mapped').textContent=located.length.toLocaleString();$('missing').textContent=(filtered.length-located.length).toLocaleString();$('largest').textContent=filtered.length?fmt(Math.max(...filtered.map(r=>number(r['impact-e'])))):'—';map(filtered);timeline(filtered);rows();if(filtered.length)choose(filtered.find(r=>r.date===selected)||filtered[0]);else clearDetail();$('status').textContent=`${filtered.length.toLocaleString()} of ${current.records.length.toLocaleString()} captured events match. ${located.length.toLocaleString()} shown on the map.`;$('csv').disabled=!filtered.length;$('json').disabled=false;}
+function changes(){const diff=current.comparison;$('changes-list').replaceChildren();$('comparison-date').textContent=current.previousCapturedAt?'Compared with '+timestamp(current.previousCapturedAt):'First comparable capture';if(!diff){$('changes-summary').textContent='This capture establishes a baseline. Later captures with the same collection settings will show field revisions, newly appearing records and records no longer present.';return;}$('changes-summary').textContent=`${diff.changed.length} records with revised fields · ${diff.added.length} newly appearing records · ${diff.absent.length} records no longer present.`;if(!diff.changed.length&&!diff.added.length&&!diff.absent.length)$('changes-summary').textContent='No catalogue values changed between these two captures.';const entries=[...diff.changed.map(r=>({kind:'Revised fields',text:r.date+' UTC · '+r.fields.map(f=>`${f.field}: ${f.before??'not reported'} → ${f.after??'not reported'}`).join('; ')})),...diff.added.map(date=>({kind:'Newly appearing',text:date+' UTC'})),...diff.absent.map(date=>({kind:'No longer present',text:date+' UTC'}))];for(const e of entries.slice(0,60)){const item=el('div',undefined,'change-item');item.append(el('strong',e.kind),el('p',e.text));$('changes-list').append(item);}if(entries.length>60)$('changes-list').append(el('p',`Showing 60 of ${entries.length} changes. Save capture JSON for the complete comparison.`));}
+async function capture(file){const sequence=++loadSequence;$('status').textContent='Loading the selected capture…';try{if(!/^captures\/\d{8}T\d{6}Z\.json$/.test(file))throw Error('Invalid capture path');const data=validateCapture(await json('./data/'+file));if(sequence!==loadSequence)return;current=data;const m=index.captures.find(c=>c.file===file);$('capture').value=file;$('coverage').textContent=`${m.count.toLocaleString()} reported events · ${m.earliest.slice(0,10)} to ${m.latest.slice(0,10)} · ${index.captures.length} retained capture${index.captures.length===1?'':'s'}`;changes();render();}catch(e){if(sequence!==loadSequence)return;$('status').textContent=`Could not load this capture: ${e.message}. ${current?'Previous results are unchanged.':'Please try again later.'}`;}}
+function save(text,name,type){const url=URL.createObjectURL(new Blob([text],{type})),a=el('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+for(const id of ['search','from','to','energy','location','region'])$(id).addEventListener('input',render);
+$('sort').addEventListener('change',render);$('capture').addEventListener('change',e=>capture(e.target.value));$('previous').addEventListener('click',()=>{page--;rows();});$('next').addEventListener('click',()=>{page++;rows();});
+function reset(){for(const id of ['search','from','to'])$(id).value='';$('energy').value='0';$('location').value='all';$('region').value='all';}
+$('reset').addEventListener('click',()=>{reset();render();});$('csv').addEventListener('click',()=>save(csv(filtered),'fireball-events-'+current.capturedAt.slice(0,10)+'.csv','text/csv'));$('json').addEventListener('click',()=>save(JSON.stringify(current,null,2),'fireball-capture-'+current.capturedAt.slice(0,10)+'.json','application/json'));
+try{[config,index]=await Promise.all([json('./config.json'),json('./data/index.json')]);if(!index.captures?.length)throw Error('No retained captures are available');$('capture').replaceChildren(...index.captures.map(c=>{const o=el('option',timestamp(c.capturedAt));o.value=c.file;return o;}));$('capture').disabled=false;for(const preset of config.presets||[]){const b=el('button',preset.label);b.addEventListener('click',()=>{reset();$('energy').value=String(preset.minEnergy??0);$('region').value=preset.region||'all';$('location').value=preset.location||'all';render();});$('presets').append(b);}for(let lon=-180;lon<=180;lon+=30){const x=project({lat:0,lon}).x;$('grid').append(svg('line',{x1:x,y1:5,x2:x,y2:505}));}for(let lat=-90;lat<=90;lat+=30){const y=project({lat,lon:0}).y;$('grid').append(svg('line',{x1:0,y1:y,x2:1000,y2:y}));}await capture(index.captures[0].file);try{const land=await json('./data/land.json');for(const geometry of land){const polygons=geometry.type==='Polygon'?[geometry.coordinates]:geometry.coordinates;for(const polygon of polygons){const d=polygon.map(ring=>ring.map(([lon,lat],i)=>{const p=project({lat,lon});return(i?'L':'M')+p.x.toFixed(2)+','+p.y.toFixed(2);}).join(' ')+'Z').join(' ');$('land').append(svg('path',{d}));}}}catch{$('status').textContent+=' Basemap unavailable; event positions and table remain available.';}}catch(e){$('status').textContent='The catalogue could not load: '+e.message+'. Open the official CNEOS catalogue or try again later.';}

@@ -1,16 +1,23 @@
 {
-  "id": "coolcode-tool-template",
-  "title": "CoolCode Tool Starter",
-  "description": "A browser-only example that trims lines and removes exact duplicates.",
-  "category": "security",
-  "tags": ["text", "lines", "duplicates"],
-  "icon": "scan-search",
-  "url": "/coolcode-tool-template/",
-  "source": "https://github.com/jsdyer/coolcode-tool-template",
+  "id": "fireballledger",
+  "title": "Fireball Ledger",
+  "description": "Explore reported fireballs, compare their energies and retain changes to the published catalogue.",
+  "category": "field-kit",
+  "tags": [
+    "astronomy",
+    "fireballs",
+    "meteors",
+    "history",
+    "space"
+  ],
+  "icon": "history",
+  "url": "/fireballledger/",
+  "source": "https://github.com/jsdyer/fireballledger",
   "hosting": "project",
   "access": "browser",
   "data_info": {
-    "mode": "local",
-    "detail": "The browser reads the text you paste and compares its lines."
+    "mode": "snapshot",
+    "detail": "Weekly captures of the NASA/JPL CNEOS catalogue preserve reported fireball locations, energies and subsequent catalogue changes.",
+    "cadence": "Weekly"
   }
 }
